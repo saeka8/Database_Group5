@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Weather Data</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Weather Data for {{ city.name }}</h1>
+
+    <div class="alert alert-info" role="alert">
+        <strong>Correlation between Temperature and Humidity: </strong>{{ correlation|floatformat:2 }}
+    </div>
+
+    <button id="toggleUnit" class="btn btn-primary">Switch to °C</button>
+
+    <canvas id="weatherChart"></canvas>
+
+    <script>
+        let isFahrenheit = true;
+        const dates = JSON.parse('{{ dates|safe }}');
+        const avgTempsF = JSON.parse('{{ avg_temps|safe }}');
+        const avgTempsC = avgTempsF.map(temp => (temp - 32) * 5.0 / 9.0);
+        const avgHumidities = JSON.parse('{{ avg_humidities|safe }}');
+
+        const ctx = document.getElementById('weatherChart').getContext('2d');
+        const weatherChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: 'Average Temperature',
+                        data: avgTempsF,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y-temp',
+                    },
+                    {
+                        label: 'Average Humidity',
+                        data: avgHumidities,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y-humidity',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: 'Month' } },
+                    'y-temp': {
+                        type: 'linear',
+                        position: 'left',
+                        title: { display: true, text: 'Temperature (°F)' },
+                        min: 0,
+                        max: 100,
+                    },
+                    'y-humidity': {
+                        type: 'linear',
+                        position: 'right',
+                        title: { display: true, text: 'Humidity (%)' },
+                        min: 0,
+                        max: 100,
+                        grid: { drawOnChartArea: false },
+                    }
+                }
+            }
+        });
+
+        document.getElementById('toggleUnit').addEventListener('click', () => {
+            isFahrenheit = !isFahrenheit;
+            weatherChart.data.datasets[0].data = isFahrenheit ? avgTempsF : avgTempsC;
+            weatherChart.data.datasets[0].label = isFahrenheit ? 'Average Temperature (°F)' : 'Average Temperature (°C)';
+            weatherChart.options.scales['y-temp'].title.text = isFahrenheit ? 'Temperature (°F)' : 'Temperature (°C)';
+            weatherChart.options.scales['y-temp'].min = isFahrenheit ? 0 : -30;
+            weatherChart.options.scales['y-temp'].max = isFahrenheit ? 100 : 50;
+            weatherChart.update();
+            document.getElementById('toggleUnit').innerText = isFahrenheit ? 'Switch to °C' : 'Switch to °F';
+        });
+    </script>
+
+    <a href="{% url 'all_weather' %}">Back to Home</a>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
